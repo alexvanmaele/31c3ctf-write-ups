@@ -1,9 +1,7 @@
 # 5CHAN
 
 **Category:** Web
-
 **Points:** 15
-
 **Description:**
 
 > 5CHAN? never heard of this image board, but they have exactly what we need,the picture we're looking for is not for public, so can you get it?
@@ -21,7 +19,7 @@ Clicking on an image brought us to its page:
 `http://188.40.18.89/?page=pic&id=1`
 
 The id parameter was susceptible to SQL injection:
-`http://188.40.18.89/?page=pic&id=%27`
+http://188.40.18.89/?page=pic&id=%27
 
 We started enumerating databases:
 ```bash
@@ -62,5 +60,5 @@ With this payload:
 
 `http://188.40.18.89/?page=pic&id=9 OR id=9 AND 1=1`
 
-The [flag.jpg image](flag.jpg) was shown, containing the flag:
+The flag.jpg image was shown, containing the flag:
 `31c3_st0Pp_Us1nG_==_&&_St4rt_Us1Ng_===`
