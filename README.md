@@ -1,4 +1,4 @@
-31c3ctf-writeups
+31C3CTF Write-ups
 ================
 
-Writeups for 31C3CTF 2014
+Write-ups for 31C3CTF 2014
